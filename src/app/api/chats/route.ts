@@ -53,6 +53,23 @@ export async function GET() {
       },
     });
 
+    // Get unread counts for each chat
+    const chatIds = chats.map(c => c.id);
+    const unreadCounts = await db.message.groupBy({
+      by: ['chatId'],
+      where: {
+        chatId: { in: chatIds },
+        receiverId: session.userId,
+        readAt: null,
+      },
+      _count: true,
+    });
+
+    // Create a map of chatId -> unread count
+    const unreadMap = new Map(
+      unreadCounts.map(uc => [uc.chatId, uc._count])
+    );
+
     // Filter out deleted chats and format response
     const formattedChats = chats
       .filter((chat) => {
@@ -69,6 +86,7 @@ export async function GET() {
           createdAt: chat.createdAt,
           otherParticipant,
           lastMessage: chat.messages[0] || null,
+          unreadCount: unreadMap.get(chat.id) || 0,
         };
       });
 

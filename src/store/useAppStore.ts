@@ -30,6 +30,7 @@ export interface Chat {
   createdAt: string;
   otherParticipant: User;
   lastMessage: Message | null;
+  unreadCount?: number;
 }
 
 export interface ChatRequest {

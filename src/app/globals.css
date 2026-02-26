@@ -370,3 +370,28 @@ html {
 .btn-press:active {
   transform: scale(0.95);
 }
+
+/* Unread badge animation - floating red circle */
+@keyframes unread-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes unread-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6), 0 0 16px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.8), 0 0 24px rgba(239, 68, 68, 0.5);
+  }
+}
+
+.unread-badge {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  animation: unread-bounce 2s ease-in-out infinite, unread-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6), 0 0 16px rgba(239, 68, 68, 0.3);
+}

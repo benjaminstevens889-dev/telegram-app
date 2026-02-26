@@ -1315,11 +1315,17 @@ function ChatList({
                     <AvatarImage src={chat.otherParticipant?.avatar || undefined} />
                     <AvatarFallback className="modern-gradient text-lg font-bold">{chat.otherParticipant?.displayName[0]}</AvatarFallback>
                   </Avatar>
+                  {/* Unread badge - animated red circle */}
+                  {chat.unreadCount && chat.unreadCount > 0 && (
+                    <div className="absolute -top-1 -left-1 w-5 h-5 unread-badge rounded-full flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-white">{chat.unreadCount > 9 ? '9+' : chat.unreadCount}</span>
+                    </div>
+                  )}
                   <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0f]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium text-white truncate">
+                    <p className={`font-medium truncate ${chat.unreadCount && chat.unreadCount > 0 ? 'text-white' : 'text-white/80'}`}>
                       {chat.otherParticipant?.displayName}
                     </p>
                     {chat.lastMessage && (
@@ -1331,7 +1337,7 @@ function ChatList({
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-white/40 truncate">
+                  <p className={`text-sm truncate ${chat.unreadCount && chat.unreadCount > 0 ? 'text-white/70 font-medium' : 'text-white/40'}`}>
                     {chat.lastMessage?.content || 'بدون پیام'}
                   </p>
                 </div>
@@ -3094,7 +3100,19 @@ export default function Home() {
           groups={groups}
           selectedChat={selectedChat}
           selectedGroup={selectedGroup}
-          onSelect={setSelectedChat}
+          onSelect={async (chat) => {
+            setSelectedChat(chat);
+            // Mark all messages as read when opening chat
+            if (chat.unreadCount && chat.unreadCount > 0) {
+              try {
+                await fetch(`/api/chats/${chat.id}/read-all`, { method: 'POST' });
+                // Update unread count in chats array
+                setChats(chats.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
+              } catch {
+                console.error('Failed to mark as read');
+              }
+            }
+          }}
           onSelectGroup={setSelectedGroup}
           onLogout={handleLogout}
           currentUser={currentUser}
