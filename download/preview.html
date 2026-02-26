@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تلگرام وب - پیش‌نمایش</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #00d4ff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .subtitle {
+            color: #fff;
+            opacity: 0.8;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+        .preview-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .preview-image {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 40px;
+            width: 100%;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .feature:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .feature-title {
+            color: #00d4ff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .feature-desc {
+            color: #fff;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        .status {
+            margin-top: 30px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #00c851 0%, #00a844 100%);
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 200, 81, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(0, 200, 81, 0); }
+        }
+        .url-box {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-family: monospace;
+            color: #00d4ff;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 تلگرام وب</h1>
+        <p class="subtitle">پیام‌رسان امن و سریع با قابلیت Real-Time</p>
+        
+        <div class="preview-container">
+            <img src="telegram-preview.png" alt="پیش‌نمایش تلگرام وب" class="preview-image">
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">💬</div>
+                <div class="feature-title">پیام‌رسانی آنی</div>
+                <div class="feature-desc">Real-time بدون نیاز به رفرش</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎤</div>
+                <div class="feature-title">پیام صوتی</div>
+                <div class="feature-desc">ضبط و ارسال ویس</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎥</div>
+                <div class="feature-title">ضبط ویدیو</div>
+                <div class="feature-desc">فیلم از وب‌کم و ارسال</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">✓✓</div>
+                <div class="feature-title">تیک آبی</div>
+                <div class="feature-desc">پیگیری خوانده شدن</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🗑️</div>
+                <div class="feature-title">حذف پیام</div>
+                <div class="feature-desc">برای من یا هر دو</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔐</div>
+                <div class="feature-title">امنیت</div>
+                <div class="feature-desc">احراز هویت امن</div>
+            </div>
+        </div>
+
+        <div class="status">✅ آماده انتشار</div>
+        
+        <div class="url-box">
+            🌐 http://localhost:3000
+        </div>
+    </div>
+</body>
+</html>

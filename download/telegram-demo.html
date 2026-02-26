@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تلگرام وب - پیش‌نمایش زنده</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0e1621;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #5eb5f7;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #8b9eb0;
+        }
+        
+        /* Main App Container */
+        .app-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            height: 700px;
+            background: #17212b;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        /* Sidebar - Chat List */
+        .sidebar {
+            width: 320px;
+            background: #17212b;
+            border-left: 1px solid #0e1621;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            background: #17212b;
+            border-bottom: 1px solid #0e1621;
+        }
+        
+        .sidebar-header input {
+            width: 100%;
+            padding: 10px 15px;
+            background: #242f3d;
+            border: none;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .sidebar-header input::placeholder {
+            color: #6b7c8f;
+        }
+        
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #0e1621;
+        }
+        
+        .chat-item:hover {
+            background: #202b36;
+        }
+        
+        .chat-item.active {
+            background: #2b5278;
+        }
+        
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+        
+        .chat-info {
+            flex: 1;
+        }
+        
+        .chat-name {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .chat-preview {
+            color: #6b7c8f;
+            font-size: 13px;
+        }
+        
+        .chat-time {
+            color: #6b7c8f;
+            font-size: 12px;
+        }
+        
+        /* Main Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0e1621;
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            background: #17212b;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #0e1621;
+        }
+        
+        .chat-header-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+        
+        .chat-header-info h3 {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .chat-header-info p {
+            color: #6b7c8f;
+            font-size: 13px;
+        }
+        
+        .chat-header-info p.online {
+            color: #4fcf5f;
+        }
+        
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .message {
+            max-width: 65%;
+            padding: 10px 15px;
+            border-radius: 12px;
+            position: relative;
+        }
+        
+        .message.received {
+            background: #182533;
+            align-self: flex-start;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.sent {
+            background: #2b5278;
+            align-self: flex-end;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-text {
+            color: #fff;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .message-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .message-time {
+            color: #6b7c8f;
+            font-size: 11px;
+        }
+        
+        .message-status {
+            color: #6b7c8f;
+            font-size: 14px;
+        }
+        
+        .message-status.read {
+            color: #5eb5f7;
+        }
+        
+        /* Voice Message */
+        .voice-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+        
+        .play-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .waveform {
+            flex: 1;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .waveform-bar {
+            width: 3px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+        
+        @keyframes wave {
+            0%, 100% { height: 8px; }
+            50% { height: 20px; }
+        }
+        
+        .voice-duration {
+            color: #6b7c8f;
+            font-size: 12px;
+        }
+        
+        /* Input Area */
+        .input-area {
+            padding: 15px 20px;
+            background: #17212b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: #6b7c8f;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #202b36;
+            color: #5eb5f7;
+        }
+        
+        .action-btn.record {
+            color: #f44336;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 12px 18px;
+            background: #242f3d;
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .message-input::placeholder {
+            color: #6b7c8f;
+        }
+        
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #5eb5f7;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .feature-card {
+            background: #17212b;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #242f3d;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(94, 181, 247, 0.1);
+            border-color: #5eb5f7;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .feature-title {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .feature-desc {
+            color: #6b7c8f;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #4fcf5f, #2ecc71);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 5px 20px rgba(79, 207, 95, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(79, 207, 95, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(79, 207, 95, 0); }
+        }
+        
+        /* URL Box */
+        .url-box {
+            margin-top: 20px;
+            background: #242f3d;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .url-box span {
+            color: #5eb5f7;
+            font-family: monospace;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-badge">✅ Real-Time فعال</div>
+    
+    <div class="header">
+        <h1>📱 تلگرام وب</h1>
+        <p>پیام‌رسان امن و سریع با قابلیت Real-Time</p>
+    </div>
+    
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <input type="text" placeholder="🔍 جستجوی کاربر..." dir="rtl">
+            </div>
+            <div class="chat-list">
+                <div class="chat-item active">
+                    <div class="chat-avatar">ع</div>
+                    <div class="chat-info">
+                        <div class="chat-name">علی محمدی</div>
+                        <div class="chat-preview">سلام! خوبی؟</div>
+                    </div>
+                    <div class="chat-time">12:30</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-avatar">م</div>
+                    <div class="chat-info">
+                        <div class="chat-name">مریم احمدی</div>
+                        <div class="chat-preview">ویدیو ارسال شد</div>
+                    </div>
+                    <div class="chat-time">11:45</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-avatar">ر</div>
+                    <div class="chat-info">
+                        <div class="chat-name">رضا کریمی</div>
+                        <div class="chat-preview">ویس پیام</div>
+                    </div>
+                    <div class="chat-time">دیروز</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-avatar">س</div>
+                    <div class="chat-info">
+                        <div class="chat-name">سارا نوری</div>
+                        <div class="chat-preview">ممنون! 🙏</div>
+                    </div>
+                    <div class="chat-time">دیروز</div>
+                </div>
+                <div class="chat-item">
+                    <div class="chat-avatar">ک</div>
+                    <div class="chat-info">
+                        <div class="chat-name">کارگروه برنامه</div>
+                        <div class="chat-preview">محمد: سلام همه</div>
+                    </div>
+                    <div class="chat-time">یکشنبه</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-header-avatar">ع</div>
+                <div class="chat-header-info">
+                    <h3>علی محمدی</h3>
+                    <p class="online">🟢 آنلاین</p>
+                </div>
+            </div>
+            
+            <div class="messages-area">
+                <div class="message received">
+                    <div class="message-text">سلام! خوبی؟ چطوری؟</div>
+                    <div class="message-meta">
+                        <span class="message-time">12:28</span>
+                    </div>
+                </div>
+                
+                <div class="message sent">
+                    <div class="message-text">سلام! خوبم ممنون، تو چطوری؟</div>
+                    <div class="message-meta">
+                        <span class="message-time">12:29</span>
+                        <span class="message-status read">✓✓</span>
+                    </div>
+                </div>
+                
+                <div class="message received">
+                    <div class="message-text">منم خوبم 👍 کجایی؟</div>
+                    <div class="message-meta">
+                        <span class="message-time">12:30</span>
+                    </div>
+                </div>
+                
+                <div class="message sent">
+                    <div class="voice-message">
+                        <button class="play-btn">▶</button>
+                        <div class="waveform">
+                            <div class="waveform-bar" style="height: 12px; animation-delay: 0s;"></div>
+                            <div class="waveform-bar" style="height: 18px; animation-delay: 0.1s;"></div>
+                            <div class="waveform-bar" style="height: 8px; animation-delay: 0.2s;"></div>
+                            <div class="waveform-bar" style="height: 22px; animation-delay: 0.3s;"></div>
+                            <div class="waveform-bar" style="height: 14px; animation-delay: 0.4s;"></div>
+                            <div class="waveform-bar" style="height: 20px; animation-delay: 0.5s;"></div>
+                            <div class="waveform-bar" style="height: 10px; animation-delay: 0.6s;"></div>
+                            <div class="waveform-bar" style="height: 16px; animation-delay: 0.7s;"></div>
+                        </div>
+                        <span class="voice-duration">0:15</span>
+                    </div>
+                    <div class="message-meta">
+                        <span class="message-time">12:31</span>
+                        <span class="message-status">✓</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <div class="input-actions">
+                    <button class="action-btn" title="پیوست فایل">📎</button>
+                    <button class="action-btn" title="ضبط ویدیو">📹</button>
+                </div>
+                <input type="text" class="message-input" placeholder="پیام خود را بنویسید..." dir="rtl">
+                <div class="input-actions">
+                    <button class="action-btn record" title="ضبط صدا">🎤</button>
+                    <button class="send-btn" title="ارسال">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="features">
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-title">Real-Time</div>
+            <div class="feature-desc">پیام‌ها همان لحظه</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎤</div>
+            <div class="feature-title">پیام صوتی</div>
+            <div class="feature-desc">ضبط و ارسال ویس</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📹</div>
+            <div class="feature-title">ضبط ویدیو</div>
+            <div class="feature-desc">از وب‌کم</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✓✓</div>
+            <div class="feature-title">تیک آبی</div>
+            <div class="feature-desc">خوانده شدن</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗑️</div>
+            <div class="feature-title">حذف پیام</div>
+            <div class="feature-desc">برای من/هر دو</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-title">امنیت</div>
+            <div class="feature-desc">ورود امن</div>
+        </div>
+    </div>
+    
+    <div class="url-box">
+        <span>🌐 http://localhost:3000</span>
+    </div>
+</body>
+</html>
