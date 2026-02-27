@@ -1,22 +1,57 @@
-FROM node:18-alpine
+FROM node:18-alpine AS base
 
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Install bun
+RUN npm install -g bun
+
+# Copy package files
+COPY package.json bun.lockb ./
+COPY prisma ./prisma/
+
 # Install dependencies
-COPY package.json bun.lockb* package-lock.json* ./
-RUN npm install
-
-# Copy source code
-COPY . .
-
-# Generate Prisma Client
+RUN bun install --frozen-lockfile
 RUN npx prisma generate
 
-# Build the app
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+
+# Install bun
+RUN npm install -g bun
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Build
 RUN npm run build
 
-# Expose port
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Automatically leverage output traces to reduce image size
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
 EXPOSE 3000
 
-# Start the app
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
