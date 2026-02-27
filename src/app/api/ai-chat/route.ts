@@ -91,18 +91,20 @@ export async function POST(request: NextRequest) {
     let aiResponse: string;
     
     try {
+      console.log('Creating ZAI instance...');
       const zai = await ZAI.create();
+      console.log('ZAI instance created, calling chat completions...');
       
       const completion = await zai.chat.completions.create({
         messages: [
           {
             role: 'system',
             content: `تو یک دستیار هوشمند و دوست‌داشتنی هستی که به زبان فارسی صحبت می‌کنی.
-            - همیشه مودب و مهربان باش
-            - پاسخ‌های کوتاه و مفید بده
-            - اگر سوسی نامفهوم است، بخواه واضح‌تر توضیح دهد
-            - می‌توانی در مورد هر موضوعی کمک کنی
-            - از ایموجی‌های زیبا استفاده کن 🌟💫✨`
+- همیشه مودب و مهربان باش
+- پاسخ‌های کوتاه و مفید بده
+- اگر سوال نامفهوم است، بخواه واضح‌تر توضیح دهد
+- می‌توانی در مورد هر موضوعی کمک کنی
+- از ایموجی‌های زیبا استفاده کن 🌟💫✨`
           },
           {
             role: 'user',
@@ -111,9 +113,13 @@ export async function POST(request: NextRequest) {
         ],
       });
 
+      console.log('Completion result:', JSON.stringify(completion, null, 2));
+      
       aiResponse = completion.choices[0]?.message?.content || 'متأسفانه نتوانستم پاسخی تولید کنم. لطفاً دوباره تلاش کنید.';
-    } catch {
-      aiResponse = 'متأسفانه در حال حاضر نمی‌توانم پاسخ دهم. لطفاً کمی بعد تلاش کنید. 🙏';
+      console.log('AI Response:', aiResponse);
+    } catch (apiError) {
+      console.error('AI API Error:', apiError);
+      aiResponse = `متأسفانه در حال حاضر نمی‌توانم پاسخ دهم. لطفاً کمی بعد تلاش کنید. 🙏\n\n(خطا: ${apiError instanceof Error ? apiError.message : 'نامشخص'})`;
     }
 
     // Save AI response
