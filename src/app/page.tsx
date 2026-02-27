@@ -3520,19 +3520,36 @@ export default function Home() {
     if (!chatToDelete) return;
 
     try {
-      await fetch(`/api/chats/${chatToDelete.id}`, {
+      const res = await fetch(`/api/chats/${chatToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deleteType }),
       });
 
+      if (res.ok) {
+        setChats(chats.filter(c => c.id !== chatToDelete.id));
+        if (selectedChat?.id === chatToDelete.id) {
+          setSelectedChat(null);
+        }
+        setChatToDelete(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        // Chat might already be deleted, just remove from UI
+        setChats(chats.filter(c => c.id !== chatToDelete.id));
+        if (selectedChat?.id === chatToDelete.id) {
+          setSelectedChat(null);
+        }
+        setChatToDelete(null);
+        console.log('Chat deleted from UI');
+      }
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      // Still remove from UI even if API fails
       setChats(chats.filter(c => c.id !== chatToDelete.id));
       if (selectedChat?.id === chatToDelete.id) {
         setSelectedChat(null);
       }
       setChatToDelete(null);
-    } catch {
-      console.error('Failed to delete chat');
     }
   };
 
