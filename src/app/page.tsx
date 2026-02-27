@@ -192,6 +192,7 @@ function AuthForm({ onSuccess }: { onSuccess: (user: User) => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -3443,7 +3444,7 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setCurrentUser(data.user);
@@ -3468,7 +3469,7 @@ export default function Home() {
 
     const fetchChats = async () => {
       try {
-        const res = await fetch('/api/chats');
+        const res = await fetch('/api/chats', { credentials: 'include' });
         const data = await res.json();
         setChats(data.chats || []);
       } catch {
@@ -3509,7 +3510,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       storeLogout();
     } catch {
       console.error('Failed to logout');
