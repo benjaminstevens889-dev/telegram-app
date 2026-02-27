@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSession } from '@/lib/session';
-import ZAI from 'z-ai-web-dev-sdk';
 
 // Get or create AI user
 async function getOrCreateAIUser() {
@@ -57,6 +56,65 @@ async function getOrCreateAIChat(userId: string, aiUserId: string) {
   });
 }
 
+// Call Groq API
+async function callGroqAPI(message: string): Promise<string> {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  
+  if (!GROQ_API_KEY) {
+    console.error('GROQ_API_KEY not found in environment variables');
+    return 'متأسفانه تنظیمات سرور کامل نیست. لطفاً با پشتیبانی تماس بگیرید.';
+  }
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: `تو یک دستیار هوشمند و دوست‌داشتنی هستی که به زبان فارسی صحبت می‌کنی.
+- همیشه مودب و مهربان باش
+- پاسخ‌های کوتاه و مفید بده
+- اگر سوال نامفهوم است، بخواه واضح‌تر توضیح دهد
+- می‌توانی در مورد هر موضوعی کمک کنی
+- از ایموجی‌های زیبا استفاده کن 🌟💫✨`
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Groq API error:', response.status, errorData);
+      return `متأسفانه در حال حاضر نمی‌توانم پاسخ دهم. لطفاً بعداً تلاش کنید. 🙏`;
+    }
+
+    const data = await response.json();
+    const aiResponse = data.choices?.[0]?.message?.content;
+    
+    if (!aiResponse) {
+      console.error('No response content from Groq:', data);
+      return 'متأسفانه پاسخی دریافت نشد. لطفاً دوباره تلاش کنید.';
+    }
+
+    return aiResponse;
+  } catch (error) {
+    console.error('Groq API call failed:', error);
+    return 'متأسفانه خطایی رخ داد. لطفاً بعداً تلاش کنید. 🙏';
+  }
+}
+
 // POST - Send message to AI and get response
 export async function POST(request: NextRequest) {
   try {
@@ -87,41 +145,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Get AI response using z-ai-web-dev-sdk
-    let aiResponse: string;
-    
-    try {
-      console.log('Creating ZAI instance...');
-      const zai = await ZAI.create();
-      console.log('ZAI instance created, calling chat completions...');
-      
-      const completion = await zai.chat.completions.create({
-        messages: [
-          {
-            role: 'assistant',
-            content: `تو یک دستیار هوشمند و دوست‌داشتنی هستی که به زبان فارسی صحبت می‌کنی.
-- همیشه مودب و مهربان باش
-- پاسخ‌های کوتاه و مفید بده
-- اگر سوال نامفهوم است، بخواه واضح‌تر توضیح دهد
-- می‌توانی در مورد هر موضوعی کمک کنی
-- از ایموجی‌های زیبا استفاده کن 🌟💫✨`
-          },
-          {
-            role: 'user',
-            content: message.trim()
-          }
-        ],
-        thinking: { type: 'disabled' }
-      });
-
-      console.log('Completion result:', JSON.stringify(completion, null, 2));
-      
-      aiResponse = completion.choices[0]?.message?.content || 'متأسفانه نتوانستم پاسخی تولید کنم. لطفاً دوباره تلاش کنید.';
-      console.log('AI Response:', aiResponse);
-    } catch (apiError) {
-      console.error('AI API Error:', apiError);
-      aiResponse = `متأسفانه در حال حاضر نمی‌توانم پاسخ دهم. لطفاً کمی بعد تلاش کنید. 🙏\n\n(خطا: ${apiError instanceof Error ? apiError.message : 'نامشخص'})`;
-    }
+    // Get AI response from Groq
+    const aiResponse = await callGroqAPI(message.trim());
 
     // Save AI response
     const aiMessage = await db.message.create({
