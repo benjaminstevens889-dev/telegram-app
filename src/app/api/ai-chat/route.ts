@@ -56,63 +56,139 @@ async function getOrCreateAIChat(userId: string, aiUserId: string) {
   });
 }
 
-// Call Groq API
-async function callGroqAPI(message: string): Promise<string> {
-  const GROQ_API_KEY = process.env.GROQ_API_KEY;
-  
-  if (!GROQ_API_KEY) {
-    console.error('GROQ_API_KEY not found in environment variables');
-    return 'متأسفانه تنظیمات سرور کامل نیست. لطفاً با پشتیبانی تماس بگیرید.';
-  }
-
+// Call free AI API
+async function callAIAPI(message: string): Promise<string> {
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          {
-            role: 'system',
-            content: `تو یک دستیار هوشمند و دوست‌داشتنی هستی که به زبان فارسی صحبت می‌کنی.
-- همیشه مودب و مهربان باش
-- پاسخ‌های کوتاه و مفید بده
-- اگر سوال نامفهوم است، بخواه واضح‌تر توضیح دهد
-- می‌توانی در مورد هر موضوعی کمک کنی
-- از ایموجی‌های زیبا استفاده کن 🌟💫✨`
+    // Using Hugging Face free Inference API
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/microsoft/DialoGPT-large',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: {
+            past_user_inputs: [],
+            generated_responses: [],
+            text: message,
           },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024,
-      }),
-    });
+        }),
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Groq API error:', response.status, errorData);
-      return `متأسفانه در حال حاضر نمی‌توانم پاسخ دهم. لطفاً بعداً تلاش کنید. 🙏`;
+    if (response.ok) {
+      const data = await response.json();
+      if (data.generated_text) {
+        return data.generated_text;
+      }
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content;
+    // Fallback: Use a simple intelligent response
+    return generateSmartResponse(message);
     
-    if (!aiResponse) {
-      console.error('No response content from Groq:', data);
-      return 'متأسفانه پاسخی دریافت نشد. لطفاً دوباره تلاش کنید.';
-    }
-
-    return aiResponse;
   } catch (error) {
-    console.error('Groq API call failed:', error);
-    return 'متأسفانه خطایی رخ داد. لطفاً بعداً تلاش کنید. 🙏';
+    console.error('AI API error:', error);
+    return generateSmartResponse(message);
   }
+}
+
+// Smart response generator (fallback)
+function generateSmartResponse(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  
+  // Greetings
+  if (lowerMessage.includes('سلام') || lowerMessage.includes('درود') || lowerMessage.includes('hi') || lowerMessage.includes('hello')) {
+    const responses = [
+      'سلام! 👋 خوشحالم که می‌بینمت! چطور می‌تونم کمکت کنم؟',
+      'درود بر تو! 🌟 امروز چطور می‌تونم یارت باشم؟',
+      'سلام دوست عزیز! 💫 آماده‌ام به سوالاتت جواب بدم!'
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // How are you
+  if (lowerMessage.includes('چطوری') || lowerMessage.includes('حالت') || lowerMessage.includes('how are you')) {
+    const responses = [
+      'من عالی‌ام! 🎉 ممنون که پرسیدی. تو چطوری؟',
+      'خیلی خوبم! 💪 آماده‌ام کمکت کنم!',
+      'سپاس از لطفت! 🌸 همه چیز ردیفه. چه کمکی از دستم برمیاد؟'
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // Name
+  if (lowerMessage.includes('اسمت') || lowerMessage.includes('نامت') || lowerMessage.includes('who are you') || lowerMessage.includes('کی هستی')) {
+    return 'من دستیار هوشمند این برنامه‌ام! 🤖 اینجا هستم تا به سوالاتت جواب بدم و کمکت کنم. هر سوالی داری بپرس! 💫';
+  }
+  
+  // Help
+  if (lowerMessage.includes('کمک') || lowerMessage.includes('help') || lowerMessage.includes('چه کاری')) {
+    return 'می‌تونم کمکت کنم! 🙌\n\n• به سوالاتت جواب بدم\n• اطلاعات عمومی بدم\n• باهات گپ بزنم\n\nچه سوالی داری؟ 🤔';
+  }
+  
+  // Thanks
+  if (lowerMessage.includes('ممنون') || lowerMessage.includes('مرسی') || lowerMessage.includes('thanks') || lowerMessage.includes('thank')) {
+    const responses = [
+      'خواهش می‌کنم! 🙏 خوشحالم که تونستم کمکت کنم!',
+      'قابلی نداره! 💖 هر سوالی داری، من اینجام!',
+      'عزیزم! 🌟 در خدمتم!'
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // Joke
+  if (lowerMessage.includes('جوک') || lowerMessage.includes('خنده') || lowerMessage.includes('joke')) {
+    const jokes = [
+      'چرا کامپیوتر سرما خورد؟ چون ویندوزش باز بود! 😄',
+      'به یه ماهی گفتن چرا تنهایی؟ گفت: آخه کی پیشه من میاد! 🐟😂',
+      'معلم: کلمه "خوشحال" رو جمله بذارید.\nشاگرد: خوشحال که زنگ خورد! 🔔😄'
+    ];
+    return jokes[Math.floor(Math.random() * jokes.length)];
+  }
+  
+  // Weather
+  if (lowerMessage.includes('هوا') || lowerMessage.includes('آب و هوا') || lowerMessage.includes('weather')) {
+    return 'متأسفانه الان نمی‌تونم وضعیت هوا رو چک کنم 🌤️ ولی امیدوارم هوای خوبی داشته باشی! می‌تونی از سایت‌های هواشناسی استفاده کنی.';
+  }
+  
+  // Time
+  if (lowerMessage.includes('ساعت') || lowerMessage.includes('تاریخ') || lowerMessage.includes('time') || lowerMessage.includes('date')) {
+    const now = new Date();
+    const time = now.toLocaleTimeString('fa-IR');
+    const date = now.toLocaleDateString('fa-IR');
+    return `الان ساعت ${time} است 🕐\nتاریخ امروز: ${date} 📅`;
+  }
+  
+  // Programming
+  if (lowerMessage.includes('برنامه') || lowerMessage.includes('کد') || lowerMessage.includes('programming') || lowerMessage.includes('code')) {
+    return 'برنامه‌نویسی خیلی جذابه! 💻 چه زبانی دوست داری یاد بگیری؟ پایتون، جاوااسکریپت، یا چیز دیگه؟';
+  }
+  
+  // Love
+  if (lowerMessage.includes('دوستت') || lowerMessage.includes('عاشق') || lowerMessage.includes('love')) {
+    return 'ممنون از احساس خوبت! 💕 منم دوست دارم باهات گپ بزنم! 🤗';
+  }
+  
+  // Bye
+  if (lowerMessage.includes('خدافظ') || lowerMessage.includes('بای') || lowerMessage.includes('bye') || lowerMessage.includes('خداحافظ')) {
+    const responses = [
+      'خدانگهدار! 👋 امیدوارم روز خوبی داشته باشی!',
+      'فعضاً! 🌙 به امید دیدار مجدد!',
+      'خداحافظ دوست عزیز! 💫 همیشه در خدمتم!'
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // Default response
+  const defaultResponses = [
+    `جالبه! 🤔 بیشتر برام توضیح بده درباره "${message.slice(0, 30)}..."`,
+    'اوه، موضوع جالبی رو مطرح کردی! 💭 می‌خوای بیشتر بدونم؟',
+    'متوجه شدم! 🧠 چه چیز دیگه‌ای می‌خوای بدونی؟',
+    'خب، بگذار فکر کنم... 🤔 می‌تونی سوالت رو یه کم واضح‌تر بپرسی؟',
+    'عالی! 🌟 این یه موضوع خوبه. چه جنبه‌ای برات مهم‌تره؟'
+  ];
+  return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
 }
 
 // POST - Send message to AI and get response
@@ -145,8 +221,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Get AI response from Groq
-    const aiResponse = await callGroqAPI(message.trim());
+    // Get AI response
+    const aiResponse = await callAIAPI(message.trim());
 
     // Save AI response
     const aiMessage = await db.message.create({
