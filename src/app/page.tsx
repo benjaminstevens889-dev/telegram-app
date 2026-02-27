@@ -1481,7 +1481,7 @@ function AIChatWindow({
         ) : (
           <div className="space-y-3">
             {messages.map((msg) => {
-              const isOwn = msg.senderId !== 'ai_assistant' && msg.senderId !== 'ai';
+              const isOwn = msg.sender?.username !== 'ai_assistant';
               return (
                 <div key={msg.id} className={`flex ${isOwn ? 'justify-start' : 'justify-end'}`}>
                   <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
