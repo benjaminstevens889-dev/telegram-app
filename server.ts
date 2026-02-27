@@ -7,10 +7,12 @@ import next from 'next';
 import { Server } from 'socket.io';
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = dev ? 'localhost' : (process.env.HOSTNAME || '0.0.0.0');
+const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
 
-console.log(`Starting server in ${dev ? 'development' : 'production'} mode on port ${port}`);
+console.log(`Starting server in ${dev ? 'development' : 'production'} mode`);
+console.log(`Port: ${port}`);
+console.log(`Hostname: ${hostname}`);
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
