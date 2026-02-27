@@ -67,6 +67,7 @@ function PasswordInput({
         placeholder={placeholder}
         className="bg-white/10 border-white/20 text-white placeholder:text-white/40 pl-10"
         required
+        autoComplete="current-password"
       />
       <button
         type="button"
@@ -251,6 +252,7 @@ function AuthForm({ onSuccess }: { onSuccess: (user: User) => void }) {
                     placeholder="نام خود را وارد کنید"
                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-indigo-500 focus:ring-indigo-500/20 transition-all"
                     required={!isLogin}
+                    autoComplete="name"
                   />
                 </div>
               )}
@@ -263,6 +265,7 @@ function AuthForm({ onSuccess }: { onSuccess: (user: User) => void }) {
                   placeholder="نام کاربری"
                   className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-indigo-500 focus:ring-indigo-500/20 transition-all"
                   required
+                  autoComplete="username"
                 />
               </div>
 
