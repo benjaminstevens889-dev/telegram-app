@@ -16,30 +16,6 @@ const nextConfig: NextConfig = {
     '.trycloudflare.com',
     'localhost:3000',
   ],
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
-              "media-src 'self' blob: data: https:",
-              "connect-src 'self' https: wss: blob: data:",
-              "font-src 'self' data:",
-              "object-src 'none'",
-              "frame-src 'self' https:",
-              "worker-src 'self' blob:",
-            ].join('; '),
-          },
-        ],
-      },
-    ];
-  },
 };
 
 export default nextConfig;
