@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String        @id @default(uuid())
+  username          String        @unique
+  password          String
+  displayName       String
+  avatar            String?
+  createdAt         DateTime      @default(now())
+  chats             Chat[]        @relation("ChatParticipants")
+  groups            Group[]       @relation("GroupMembers")
+  ownedGroups       Group[]       @relation("GroupOwner")
+  sentMessages      Message[]     @relation("SentMessages")
+  receivedMessages  Message[]     @relation("ReceivedMessages")
+  sentRequests      ChatRequest[] @relation("SentRequests")
+  receivedRequests  ChatRequest[] @relation("ReceivedRequests")
+  mutedInGroups     GroupMute[]   @relation("MutedUser")
+  groupMessages     GroupMessage[] @relation("SentGroupMessages")
+  groupUnreads      GroupUnread[] @relation("GroupUnreadUser")
+}
+
+model Chat {
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+  deletedBy   String?   // JSON array of user IDs who deleted
+  participants User[]   @relation("ChatParticipants")
+  messages    Message[]
+}
+
+model Group {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  createdAt   DateTime    @default(now())
+  ownerId     String
+  owner       User        @relation("GroupOwner", fields: [ownerId], references: [id])
+  members     User[]      @relation("GroupMembers")
+  messages    GroupMessage[]   @relation("GroupMessages")
+  mutes       GroupMute[]      @relation("GroupMutes")
+  unreads     GroupUnread[]    @relation("GroupUnreadGroup")
+}
+
+model GroupMessage {
+  id           String    @id @default(uuid())
+  content      String
+  messageType  String    @default("text") // text, file, voice
+  fileUrl      String?
+  fileName     String?
+  fileSize     Int?
+  fileType     String?
+  duration     Int?
+  senderId     String
+  groupId      String
+  sender       User      @relation("SentGroupMessages", fields: [senderId], references: [id])
+  group        Group     @relation("GroupMessages", fields: [groupId], references: [id])
+  createdAt    DateTime  @default(now())
+  scheduledAt  DateTime? // For scheduled messages
+  isSent       Boolean   @default(true) // false for pending scheduled messages
+  replyToId    String?   // For reply feature
+  replyTo      GroupMessage?  @relation("GroupMessageReplies", fields: [replyToId], references: [id])
+  replies      GroupMessage[] @relation("GroupMessageReplies")
+}
+
+model GroupMute {
+  id        String    @id @default(uuid())
+  userId    String
+  groupId   String
+  user      User      @relation("MutedUser", fields: [userId], references: [id])
+  group     Group     @relation("GroupMutes", fields: [groupId], references: [id])
+  until     DateTime  // When mute expires
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, groupId])
+}
+
+model GroupUnread {
+  id           String   @id @default(uuid())
+  userId       String
+  groupId      String
+  unreadCount  Int      @default(0)
+  user         User     @relation("GroupUnreadUser", fields: [userId], references: [id])
+  group        Group    @relation("GroupUnreadGroup", fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model Message {
+  id           String    @id @default(uuid())
+  content      String
+  messageType  String    @default("text") // text, file, voice
+  fileUrl      String?
+  fileName     String?
+  fileSize     Int?
+  fileType     String?
+  duration     Int?      // Duration in seconds for voice messages
+  senderId     String
+  receiverId   String
+  chatId       String
+  sender       User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver     User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  chat         Chat      @relation(fields: [chatId], references: [id])
+  createdAt    DateTime  @default(now())
+  readAt       DateTime?
+  deletedFor   String?   // JSON array of user IDs
+  scheduledAt  DateTime? // For scheduled messages
+  isSent       Boolean   @default(true) // false for pending scheduled messages
+}
+
+model ChatRequest {
+  id          String    @id @default(uuid())
+  senderId    String
+  receiverId  String
+  sender      User      @relation("SentRequests", fields: [senderId], references: [id])
+  receiver    User      @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  status      String    @default("pending") // pending, accepted, rejected
+  createdAt   DateTime  @default(now())
+}
+
+model Call {
+  id            String    @id @default(uuid())
+  callerId      String
+  receiverId    String
+  chatId        String
+  status        String    @default("calling") // calling, ringing, connected, ended, missed, rejected
+  callType      String    @default("voice") // voice, video
+  offer         String?   // SDP offer (JSON)
+  answer        String?   // SDP answer (JSON)
+  callerCandidates String? // ICE candidates from caller (JSON array)
+  receiverCandidates String? // ICE candidates from receiver (JSON array)
+  startedAt     DateTime?
+  endedAt       DateTime?
+  duration      Int?      // Duration in seconds
+  createdAt     DateTime  @default(now())
+}

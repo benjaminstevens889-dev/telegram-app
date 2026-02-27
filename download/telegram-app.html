@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تلگرام وب - پیش‌نمایش</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0e1621;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Auth Screen */
+        .auth-screen {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a365d 0%, #0e1621 100%);
+        }
+        .auth-card {
+            background: rgba(23, 33, 43, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .auth-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #5eb5f7, #2b5278);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        .auth-title {
+            color: #fff;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .auth-subtitle {
+            color: #7a8b9a;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            background: #0e1621;
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #7a8b9a;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .auth-tab.active {
+            background: #5eb5f7;
+            color: #fff;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: #242f3d;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 15px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .auth-input:focus { box-shadow: 0 0 0 2px #5eb5f7; }
+        .auth-input::placeholder { color: #5a6a7a; }
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: #5eb5f7;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .auth-btn:hover { background: #4a9fd9; transform: translateY(-1px); }
+        
+        /* Main App */
+        .main-app {
+            display: none;
+            width: 100%;
+            height: 100vh;
+        }
+        .app-container {
+            display: flex;
+            height: 100%;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: #17212b;
+            border-left: 1px solid #0e1621;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 15px 18px;
+            border-bottom: 1px solid #0e1621;
+        }
+        .sidebar-header input {
+            width: 100%;
+            padding: 12px 18px;
+            background: #242f3d;
+            border: none;
+            border-radius: 22px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        .sidebar-header input:focus { box-shadow: 0 0 0 2px rgba(94,181,247,0.3); }
+        .sidebar-header input::placeholder { color: #5a6a7a; }
+        
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .chat-item:hover { background: #202b36; }
+        .chat-item.active { background: #2b5278; }
+        
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-left: 14px;
+            flex-shrink: 0;
+        }
+        .chat-info { flex: 1; min-width: 0; }
+        .chat-name { color: #fff; font-size: 15px; font-weight: 500; margin-bottom: 5px; }
+        .chat-preview { color: #6b7c8f; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-meta { text-align: left; margin-right: 10px; }
+        .chat-time { color: #6b7c8f; font-size: 12px; }
+        .unread-badge {
+            background: #5eb5f7;
+            color: #fff;
+            font-size: 12px;
+            padding: 3px 9px;
+            border-radius: 12px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #0f1923 0%, #0e1621 100%);
+        }
+        .chat-header {
+            padding: 16px 24px;
+            background: #17212b;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #0e1621;
+        }
+        .chat-header .avatar { margin-left: 16px; }
+        .chat-header-info h3 { color: #fff; font-size: 16px; font-weight: 500; }
+        .chat-header-info p { color: #6b7c8f; font-size: 13px; margin-top: 3px; }
+        .chat-header-info .online { color: #4fcf5f; }
+        .chat-header-actions { margin-right: auto; display: flex; gap: 8px; }
+        .header-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: #6b7c8f;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        .header-btn:hover { background: #202b36; color: #5eb5f7; }
+        
+        /* Messages */
+        .messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            max-width: 60%;
+            padding: 10px 16px;
+            border-radius: 14px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.received {
+            background: #182533;
+            align-self: flex-start;
+            border-bottom-right-radius: 4px;
+        }
+        .message.sent {
+            background: #2b5278;
+            align-self: flex-end;
+            border-bottom-left-radius: 4px;
+        }
+        .message-text { color: #fff; font-size: 14px; line-height: 1.5; }
+        .message-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .message-time { color: rgba(255,255,255,0.45); font-size: 11px; }
+        .message-status { font-size: 16px; }
+        .message-status.read { color: #5eb5f7; }
+        .message-status.unread { color: rgba(255,255,255,0.45); }
+        
+        /* Voice Message */
+        .voice-msg {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 220px;
+        }
+        .play-btn {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .play-btn:hover { background: rgba(255,255,255,0.25); }
+        .waveform {
+            flex: 1;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .bar {
+            width: 3px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 2px;
+        }
+        .bar.active { background: #fff; }
+        .voice-time { color: rgba(255,255,255,0.5); font-size: 12px; }
+        
+        /* Input */
+        .input-area {
+            padding: 16px 24px;
+            background: #17212b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .input-btn {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: #6b7c8f;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+        .input-btn:hover { background: #202b36; }
+        .input-btn.mic { color: #f44336; }
+        .input-btn.mic:hover { background: rgba(244,67,54,0.15); }
+        .msg-input {
+            flex: 1;
+            padding: 14px 20px;
+            background: #242f3d;
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+        .msg-input:focus { box-shadow: 0 0 0 2px rgba(94,181,247,0.3); }
+        .msg-input::placeholder { color: #5a6a7a; }
+        .send-btn {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: #5eb5f7;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .send-btn:hover { background: #4a9fd9; transform: scale(1.05); }
+        
+        /* Typing */
+        .typing {
+            color: #6b7c8f;
+            font-size: 13px;
+            padding: 8px 24px;
+            display: none;
+        }
+        .typing.active { display: block; }
+        .typing span { animation: dots 1.4s infinite; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dots {
+            0%, 60%, 100% { opacity: 0; }
+            30% { opacity: 1; }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2b3a4a; border-radius: 3px; }
+        
+        /* Status Bar */
+        .status-bar {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #4fcf5f, #2ecc71);
+            color: #fff;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 100;
+            box-shadow: 0 5px 20px rgba(79,207,95,0.3);
+            display: none;
+        }
+        .status-bar.active { display: block; animation: slideDown 0.5s ease; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">✅ پیام جدید دریافت شد!</div>
+    
+    <!-- Auth Screen -->
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-card">
+            <div class="auth-logo">💬</div>
+            <h1 class="auth-title">تلگرام</h1>
+            <p class="auth-subtitle">پیام‌رسان امن و سریع</p>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">ورود</button>
+                <button class="auth-tab" onclick="switchTab('register')">ثبت‌نام</button>
+            </div>
+            
+            <input type="text" class="auth-input" id="usernameInput" placeholder="نام کاربری">
+            <input type="password" class="auth-input" id="passwordInput" placeholder="رمز عبور">
+            <input type="text" class="auth-input" id="nameInput" placeholder="نام نمایشی" style="display:none;">
+            
+            <button class="auth-btn" onclick="login()">ورود به حساب</button>
+        </div>
+    </div>
+    
+    <!-- Main App -->
+    <div class="main-app" id="mainApp">
+        <div class="app-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <input type="text" placeholder="جستجوی کاربر..." id="searchInput">
+                </div>
+                <div class="chat-list" id="chatList"></div>
+            </div>
+            
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <div class="chat-header" id="chatHeader">
+                    <div class="avatar" style="background: linear-gradient(135deg, #667eea, #764ba2);">ع</div>
+                    <div class="chat-header-info">
+                        <h3>علی محمدی</h3>
+                        <p class="online">آنلاین</p>
+                    </div>
+                    <div class="chat-header-actions">
+                        <button class="header-btn">📞</button>
+                        <button class="header-btn">⋮</button>
+                    </div>
+                </div>
+                
+                <div class="typing" id="typingIndicator">
+                    در حال نوشتن<span>.</span><span>.</span><span>.</span>
+                </div>
+                
+                <div class="messages" id="messages"></div>
+                
+                <div class="input-area">
+                    <button class="input-btn" title="پیوست فایل">📎</button>
+                    <button class="input-btn" title="ضبط ویدیو">📹</button>
+                    <input type="text" class="msg-input" placeholder="پیام خود را بنویسید..." id="msgInput">
+                    <button class="input-btn mic" title="ضبط صدا">🎤</button>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auth
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.auth-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            tabs[tab === 'login' ? 0 : 1].classList.add('active');
+            document.getElementById('nameInput').style.display = tab === 'register' ? 'block' : 'none';
+        }
+        
+        function login() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            renderChatList();
+            renderMessages();
+            startPolling();
+        }
+        
+        // Chat Data
+        const chats = [
+            { id: 1, name: 'علی محمدی', avatar: 'ع', color: 'linear-gradient(135deg, #667eea, #764ba2)', lastMsg: 'باشه حتماً!', time: '12:35', unread: 1, online: true },
+            { id: 2, name: 'مریم احمدی', avatar: 'م', color: 'linear-gradient(135deg, #f093fb, #f5576c)', lastMsg: 'ویدیو ارسال شد 📹', time: '11:45', unread: 0, online: true },
+            { id: 3, name: 'رضا کریمی', avatar: 'ر', color: 'linear-gradient(135deg, #4facfe, #00f2fe)', lastMsg: '🎤 پیام صوتی', time: '10:20', unread: 0, online: false },
+            { id: 4, name: 'سارا نوری', avatar: 'س', color: 'linear-gradient(135deg, #43e97b, #38f9d7)', lastMsg: 'ممنون! 🙏', time: 'دیروز', unread: 0, online: false },
+        ];
+
+        let messages = [
+            { id: 1, text: 'سلام! خوبی؟ چطوری؟', sent: false, time: '12:28', read: true },
+            { id: 2, text: 'سلام! خوبم ممنون 😊 تو چطوری؟', sent: true, time: '12:29', read: true },
+            { id: 3, text: 'منم خوبم! داشتم فکر می‌کردم شاید فردا بریم کافی‌شاپ؟', sent: false, time: '12:30', read: true },
+            { id: 4, text: 'آره حتماً! ساعت چند؟', sent: true, time: '12:31', read: true },
+            { id: 5, voice: true, duration: '0:15', sent: true, time: '12:32', read: true },
+            { id: 6, text: 'عالیه! پس ساعت ۵ باشد 👍', sent: false, time: '12:33', read: true },
+        ];
+
+        let currentChat = chats[0];
+        let msgIdCounter = 7;
+
+        function renderChatList() {
+            document.getElementById('chatList').innerHTML = chats.map(chat => `
+                <div class="chat-item ${chat.id === currentChat.id ? 'active' : ''}" onclick="selectChat(${chat.id})">
+                    <div class="avatar" style="background: ${chat.color}">${chat.avatar}</div>
+                    <div class="chat-info">
+                        <div class="chat-name">${chat.name}</div>
+                        <div class="chat-preview">${chat.lastMsg}</div>
+                    </div>
+                    <div class="chat-meta">
+                        <div class="chat-time">${chat.time}</div>
+                        ${chat.unread > 0 ? `<span class="unread-badge">${chat.unread}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function generateWaveform() {
+            let bars = '';
+            for (let i = 0; i < 25; i++) {
+                const height = Math.random() * 18 + 6;
+                bars += `<div class="bar" style="height: ${height}px"></div>`;
+            }
+            return bars;
+        }
+
+        function renderMessages() {
+            const el = document.getElementById('messages');
+            el.innerHTML = messages.map(msg => {
+                if (msg.voice) {
+                    return `
+                        <div class="message ${msg.sent ? 'sent' : 'received'}">
+                            <div class="voice-msg">
+                                <button class="play-btn">▶</button>
+                                <div class="waveform">${generateWaveform()}</div>
+                                <span class="voice-time">${msg.duration}</span>
+                            </div>
+                            <div class="message-footer">
+                                <span class="message-time">${msg.time}</span>
+                                ${msg.sent ? `<span class="message-status ${msg.read ? 'read' : 'unread'}">${msg.read ? '✓✓' : '✓'}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="message ${msg.sent ? 'sent' : 'received'}">
+                        <div class="message-text">${msg.text}</div>
+                        <div class="message-footer">
+                            <span class="message-time">${msg.time}</span>
+                            ${msg.sent ? `<span class="message-status ${msg.read ? 'read' : 'unread'}">${msg.read ? '✓✓' : '✓'}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function selectChat(id) {
+            currentChat = chats.find(c => c.id === id);
+            currentChat.unread = 0;
+            document.querySelector('.chat-header .avatar').textContent = currentChat.avatar;
+            document.querySelector('.chat-header .avatar').style.background = currentChat.color;
+            document.querySelector('.chat-header h3').textContent = currentChat.name;
+            document.querySelector('.chat-header p').textContent = currentChat.online ? 'آنلاین' : 'آخرین بازدید: اخیراً';
+            document.querySelector('.chat-header p').className = currentChat.online ? 'online' : '';
+            renderChatList();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            messages.push({ id: msgIdCounter++, text, sent: true, time, read: false });
+            input.value = '';
+            renderMessages();
+
+            // Simulate reply
+            setTimeout(() => {
+                document.getElementById('typingIndicator').classList.add('active');
+            }, 300);
+            
+            setTimeout(() => {
+                document.getElementById('typingIndicator').classList.remove('active');
+                const replies = ['باشه! 👍', 'عالیه! 😊', 'خیلی خوب!', 'حتماً', 'فهمیدم 👌', 'ممنون!'];
+                messages.push({
+                    id: msgIdCounter++,
+                    text: replies[Math.floor(Math.random() * replies.length)],
+                    sent: false,
+                    time: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+                    read: true
+                });
+                messages.forEach(m => { if (m.sent) m.read = true; });
+                renderMessages();
+                
+                // Show notification
+                document.getElementById('statusBar').classList.add('active');
+                setTimeout(() => document.getElementById('statusBar').classList.remove('active'), 3000);
+            }, 2000);
+        }
+
+        // Polling simulation - shows new messages every 4 seconds
+        function startPolling() {
+            setInterval(() => {
+                // Simulate receiving message (random chance)
+                if (Math.random() > 0.7) {
+                    const autoMessages = [
+                        'سلام! چطوری؟',
+                        'خبیدی؟',
+                        'کی میای؟',
+                        'فعلاً',
+                        'چه خبر؟'
+                    ];
+                    // This simulates the polling behavior
+                    console.log('Polling... checking for new messages');
+                }
+            }, 4000);
+        }
+
+        document.getElementById('msgInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
