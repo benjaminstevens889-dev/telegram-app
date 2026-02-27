@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       const completion = await zai.chat.completions.create({
         messages: [
           {
-            role: 'system',
+            role: 'assistant',
             content: `تو یک دستیار هوشمند و دوست‌داشتنی هستی که به زبان فارسی صحبت می‌کنی.
 - همیشه مودب و مهربان باش
 - پاسخ‌های کوتاه و مفید بده
@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
             content: message.trim()
           }
         ],
+        thinking: { type: 'disabled' }
       });
 
       console.log('Completion result:', JSON.stringify(completion, null, 2));
