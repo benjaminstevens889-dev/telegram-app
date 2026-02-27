@@ -41,7 +41,9 @@ import {
   RotateCcw,
   Users,
   Clock,
-  Reply
+  Reply,
+  Sparkles,
+  Bot
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { faIR } from 'date-fns/locale';
@@ -1370,6 +1372,169 @@ function GroupChatWindow({
   );
 }
 
+// ==================== AI Chat Window ====================
+function AIChatWindow({
+  onBack
+}: {
+  onBack: () => void;
+}) {
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch AI chat messages
+  useEffect(() => {
+    const fetchAIChat = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/ai-chat');
+        const data = await res.json();
+        if (res.ok && data.chat?.messages) {
+          setMessages(data.chat.messages);
+        }
+      } catch {
+        console.error('Failed to fetch AI chat');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAIChat();
+  }, []);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!message.trim() || sending) return;
+
+    const userMessage: Message = {
+      id: 'temp-' + Date.now(),
+      content: message.trim(),
+      messageType: 'text',
+      senderId: 'user',
+      receiverId: 'ai',
+      chatId: 'ai-chat',
+      sender: { id: 'user', username: 'user', displayName: 'شما', avatar: null },
+      receiver: { id: 'ai', username: 'ai_assistant', displayName: '🤖 دستیار هوشمند', avatar: null },
+      createdAt: new Date().toISOString(),
+      readAt: null
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    const messageToSend = message.trim();
+    setMessage('');
+    setSending(true);
+
+    try {
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageToSend })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.message) {
+        setMessages(prev => [...prev.filter(m => !m.id.startsWith('temp-')), data.message]);
+      }
+    } catch {
+      console.error('Failed to send message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-[#0a0a0f]">
+      {/* Header */}
+      <div className="flex items-center gap-3 p-4 border-b border-white/5 bg-[#12121a]/80 backdrop-blur-xl">
+        <Button variant="ghost" size="icon" className="lg:hidden text-white/70 hover:text-white hover:bg-white/5" onClick={onBack}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="w-11 h-11 modern-gradient rounded-full flex items-center justify-center ring-2 ring-white/10">
+          <Sparkles className="w-6 h-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-medium text-white">🤖 دستیار هوشمند</p>
+          <p className="text-sm text-green-400">آنلاین • آماده پاسخگویی</p>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-8 h-8 border-2 border-white/20 border-t-indigo-500 rounded-full animate-spin" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="text-center text-white/50 py-12">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+              <Bot className="w-10 h-10 text-indigo-400" />
+            </div>
+            <p className="font-medium text-lg">سلام! 👋</p>
+            <p className="text-sm mt-2 text-white/40">من دستیار هوشمند شما هستم.</p>
+            <p className="text-sm text-white/40">چطور می‌توانم کمکتان کنم؟</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {messages.map((msg) => {
+              const isOwn = msg.senderId !== 'ai_assistant' && msg.senderId !== 'ai';
+              return (
+                <div key={msg.id} className={`flex ${isOwn ? 'justify-start' : 'justify-end'}`}>
+                  <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
+                    isOwn ? 'chat-bubble-sent text-white' : 'chat-bubble-received text-white'
+                  }`}>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    <p className="text-[10px] opacity-50 mt-1 text-left">
+                      {new Date(msg.createdAt).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+            {sending && (
+              <div className="flex justify-end">
+                <div className="max-w-[70%] rounded-2xl px-4 py-2.5 chat-bubble-received text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="p-4 border-t border-white/5 bg-[#12121a]/80 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="سوال خود را بنویسید..."
+            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+            disabled={sending}
+          />
+          <Button 
+            onClick={handleSend} 
+            disabled={!message.trim() || sending}
+            className="modern-gradient hover:opacity-90 w-11 h-11 rounded-xl btn-press"
+          >
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ==================== Chat List Component ====================
 function ChatList({ 
   chats,
@@ -1379,7 +1544,8 @@ function ChatList({
   onSelect,
   onSelectGroup,
   onLogout,
-  currentUser
+  currentUser,
+  onSelectAI
 }: { 
   chats: Chat[];
   groups: Group[];
@@ -1389,6 +1555,7 @@ function ChatList({
   onSelectGroup: (group: Group) => void;
   onLogout: () => void;
   currentUser: User;
+  onSelectAI: () => void;
 }) {
   const [showProfile, setShowProfile] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
@@ -1483,6 +1650,16 @@ function ChatList({
               title="ساخت گروه"
             >
               <Users className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white/50 hover:text-white hover:bg-white/5 transition-all relative group"
+              onClick={onSelectAI}
+              title="چت با هوش مصنوعی"
+            >
+              <Sparkles className="w-5 h-5 group-hover:text-indigo-400 transition-colors" />
+              <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             </Button>
           </div>
           <div className="flex items-center gap-2">
@@ -3409,6 +3586,7 @@ export default function Home() {
   
   const [loading, setLoading] = useState(true);
   const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // Handle selecting a group - mark as read
   const handleSelectGroup = async (group: Group) => {
@@ -3600,7 +3778,7 @@ export default function Home() {
       {/* Mobile: Show either chat list OR chat window */}
       
       {/* Chat List */}
-      <div className={`${selectedChat || selectedGroup ? 'hidden lg:flex' : 'flex'} w-full lg:w-[350px] flex-col border-l border-white/10`}>
+      <div className={`${selectedChat || selectedGroup || showAIChat ? 'hidden lg:flex' : 'flex'} w-full lg:w-[350px] flex-col border-l border-white/10`}>
         <ChatList
           chats={chats}
           groups={groups}
@@ -3610,12 +3788,17 @@ export default function Home() {
           onSelectGroup={handleSelectGroup}
           onLogout={handleLogout}
           currentUser={currentUser}
+          onSelectAI={() => { setShowAIChat(true); setSelectedChat(null); setSelectedGroup(null); }}
         />
       </div>
 
       {/* Chat Window */}
-      <div className={`${!selectedChat && !selectedGroup ? 'hidden lg:flex' : 'flex'} flex-1 flex-col`}>
-        {selectedGroup ? (
+      <div className={`${!selectedChat && !selectedGroup && !showAIChat ? 'hidden lg:flex' : 'flex'} flex-1 flex-col`}>
+        {showAIChat ? (
+          <AIChatWindow
+            onBack={() => setShowAIChat(false)}
+          />
+        ) : selectedGroup ? (
           <GroupChatWindow
             group={selectedGroup}
             currentUser={currentUser}
