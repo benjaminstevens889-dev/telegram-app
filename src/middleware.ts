@@ -15,7 +15,16 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
-// Apply to all routes
+// Only apply to non-API routes to avoid interfering with session cookies
 export const config = {
-  matcher: '/:path*',
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes) - important for session cookies
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|download).*)',
+  ],
 };

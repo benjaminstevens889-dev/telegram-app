@@ -11,12 +11,15 @@ export const defaultSession: SessionData = {
   isLoggedIn: false,
 };
 
+// Simple production check - Render always uses HTTPS
+const isProduction = process.env.NODE_ENV === 'production';
+
 export const sessionOptions: SessionOptions = {
-  password: process.env.SESSION_SECRET || 'complex_password_at_least_32_characters_long_for_security',
+  password: process.env.SESSION_SECRET || 'complex_password_at_least_32_characters_long_for_security_telegram_app_v2',
   cookieName: 'telegram_session',
   cookieOptions: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // True in production (HTTPS), false in development
+    secure: isProduction,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 1 week
     path: '/',
@@ -28,13 +31,12 @@ export async function getSession() {
     const cookieStore = await cookies();
     const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
     
-    if (!session.isLoggedIn) {
-      session.isLoggedIn = false;
-    }
-    
     return session;
   } catch (error) {
     console.error('Session error:', error);
-    return { isLoggedIn: false } as SessionData;
+    // Create a new session object
+    const cookieStore = await cookies();
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+    return session;
   }
 }

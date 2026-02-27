@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
     session.isLoggedIn = true;
     await session.save();
 
-    return NextResponse.json({
+    console.log('Login successful for user:', user.username);
+
+    const response = NextResponse.json({
       user: {
         id: user.id,
         username: user.username,
@@ -53,6 +55,8 @@ export async function POST(request: NextRequest) {
         avatar: user.avatar,
       },
     });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
