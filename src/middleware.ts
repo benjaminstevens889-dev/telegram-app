@@ -4,27 +4,17 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  // Set Content Security Policy - very permissive for development
-  const cspHeader = "default-src 'self' 'unsafe-eval' 'unsafe-inline' https: blob: data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; font-src 'self' https: data:; connect-src 'self' https: wss: ws:; media-src 'self' https: blob: data:; object-src 'none'; frame-src 'self' https:;";
-
-  response.headers.set('Content-Security-Policy', cspHeader);
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
+  // Set a very permissive CSP that allows everything including eval
+  // This is needed for some libraries that use eval() or new Function()
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src * 'unsafe-inline' data:; img-src * data: blob:; connect-src * data: blob:; font-src * data:;"
+  );
 
   return response;
 }
 
-// Only apply to non-API routes to avoid interfering with session cookies
+// Apply to all routes
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes) - important for session cookies
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|download).*)',
-  ],
+  matcher: '/:path*',
 };
