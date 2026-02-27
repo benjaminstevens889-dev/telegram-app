@@ -815,6 +815,17 @@ function GroupChatWindow({
     }
   }, [groupMessages]);
 
+  // Mark group as read when messages are loaded or new message arrives
+  useEffect(() => {
+    if (groupMessages.length > 0) {
+      const lastMessage = groupMessages[groupMessages.length - 1];
+      // Only mark as read if the last message is from someone else
+      if (lastMessage && lastMessage.senderId !== currentUser.id) {
+        fetch(`/api/groups/${group.id}/read`, { method: 'POST' });
+      }
+    }
+  }, [groupMessages.length, currentUser.id, group.id]);
+
   const handleSend = async (delayMinutes?: number) => {
     if (!message.trim()) return;
 
@@ -3440,40 +3451,6 @@ export default function Home() {
       console.error('Failed to mark as read');
     }
   };
-
-  // Auto-mark as read when viewing a group and new message arrives
-  useEffect(() => {
-    if (selectedGroup && groupMessages.length > 0) {
-      const lastMessage = groupMessages[groupMessages.length - 1];
-      if (lastMessage && lastMessage.senderId !== currentUser?.id) {
-        // Mark as read when viewing group
-        fetch(`/api/groups/${selectedGroup.id}/read`, { method: 'POST' });
-        // Update local state
-        const group = groups.find(g => g.id === selectedGroup.id);
-        if (group && group.unreadCount && group.unreadCount > 0) {
-          setGroups(groups.map(g => g.id === selectedGroup.id ? { ...g, unreadCount: 0 } : g));
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupMessages.length]);
-
-  // Auto-mark as read when viewing a chat and new message arrives
-  useEffect(() => {
-    if (selectedChat && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage && lastMessage.senderId !== currentUser?.id && lastMessage.receiverId === currentUser?.id) {
-        // Mark as read when viewing chat
-        fetch(`/api/chats/${selectedChat.id}/read-all`, { method: 'POST' });
-        // Update local state
-        const chat = chats.find(c => c.id === selectedChat.id);
-        if (chat && chat.unreadCount && chat.unreadCount > 0) {
-          setChats(chats.map(c => c.id === selectedChat.id ? { ...c, unreadCount: 0 } : c));
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length]);
 
   // Check auth on mount
   useEffect(() => {
