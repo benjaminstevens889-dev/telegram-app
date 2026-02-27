@@ -1411,9 +1411,12 @@ function AIChatWindow({
   const handleSend = async () => {
     if (!message.trim() || sending) return;
 
+    const messageToSend = message.trim();
+    
+    // Add user message immediately
     const userMessage: Message = {
-      id: 'temp-' + Date.now(),
-      content: message.trim(),
+      id: 'temp-user-' + Date.now(),
+      content: messageToSend,
       messageType: 'text',
       senderId: 'user',
       receiverId: 'ai',
@@ -1425,23 +1428,60 @@ function AIChatWindow({
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const messageToSend = message.trim();
     setMessage('');
     setSending(true);
 
     try {
+      console.log('Sending message to AI:', messageToSend);
+      
       const res = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: messageToSend })
       });
+      
+      console.log('Response status:', res.status);
+      
       const data = await res.json();
+      console.log('Response data:', data);
       
       if (res.ok && data.message) {
-        setMessages(prev => [...prev.filter(m => !m.id.startsWith('temp-')), data.message]);
+        // Remove temp user message and add both real messages
+        setMessages(prev => {
+          const filtered = prev.filter(m => !m.id.startsWith('temp-'));
+          return [...filtered, data.message];
+        });
+      } else {
+        console.error('API error:', data);
+        // Show error message
+        const errorMessage: Message = {
+          id: 'error-' + Date.now(),
+          content: '❌ خطا: ' + (data.error || 'مشکلی پیش آمد'),
+          messageType: 'text',
+          senderId: 'ai_assistant',
+          receiverId: 'user',
+          chatId: 'ai-chat',
+          sender: { id: 'ai', username: 'ai_assistant', displayName: '🤖 دستیار هوشمند', avatar: null },
+          createdAt: new Date().toISOString(),
+          readAt: null
+        };
+        setMessages(prev => [...prev.filter(m => !m.id.startsWith('temp-')), errorMessage]);
       }
-    } catch {
-      console.error('Failed to send message');
+    } catch (error) {
+      console.error('Network error:', error);
+      // Show network error
+      const errorMessage: Message = {
+        id: 'error-' + Date.now(),
+        content: '❌ خطای شبکه! لطفاً اتصال اینترنت را چک کنید.',
+        messageType: 'text',
+        senderId: 'ai_assistant',
+        receiverId: 'user',
+        chatId: 'ai-chat',
+        sender: { id: 'ai', username: 'ai_assistant', displayName: '🤖 دستیار هوشمند', avatar: null },
+        createdAt: new Date().toISOString(),
+        readAt: null
+      };
+      setMessages(prev => [...prev.filter(m => !m.id.startsWith('temp-')), errorMessage]);
     } finally {
       setSending(false);
     }
