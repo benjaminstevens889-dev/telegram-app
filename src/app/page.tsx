@@ -3414,34 +3414,66 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
 
-  // Handle selecting a group - mark as read
+  // Handle selecting a group - mark as read immediately
   const handleSelectGroup = async (group: Group) => {
     setSelectedGroup(group);
     
-    // Mark group as read
-    if (group.unreadCount && group.unreadCount > 0) {
-      try {
-        await fetch(`/api/groups/${group.id}/read`, { method: 'POST' });
-      } catch {
-        console.error('Failed to mark group as read');
-      }
+    // Always mark group as read when opening (even if unreadCount is 0)
+    try {
+      await fetch(`/api/groups/${group.id}/read`, { method: 'POST' });
+      // Update unread count in groups array
+      setGroups(groups.map(g => g.id === group.id ? { ...g, unreadCount: 0 } : g));
+    } catch {
+      console.error('Failed to mark group as read');
     }
   };
 
-  // Handle selecting a chat - mark as read
+  // Handle selecting a chat - mark as read immediately
   const handleSelectChat = async (chat: Chat) => {
     setSelectedChat(chat);
-    // Mark all messages as read when opening chat
-    if (chat.unreadCount && chat.unreadCount > 0) {
-      try {
-        await fetch(`/api/chats/${chat.id}/read-all`, { method: 'POST' });
-        // Update unread count in chats array
-        setChats(chats.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
-      } catch {
-        console.error('Failed to mark as read');
-      }
+    // Always mark all messages as read when opening chat
+    try {
+      await fetch(`/api/chats/${chat.id}/read-all`, { method: 'POST' });
+      // Update unread count in chats array
+      setChats(chats.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
+    } catch {
+      console.error('Failed to mark as read');
     }
   };
+
+  // Auto-mark as read when viewing a group and new message arrives
+  useEffect(() => {
+    if (selectedGroup && groupMessages.length > 0) {
+      const lastMessage = groupMessages[groupMessages.length - 1];
+      if (lastMessage && lastMessage.senderId !== currentUser?.id) {
+        // Mark as read when viewing group
+        fetch(`/api/groups/${selectedGroup.id}/read`, { method: 'POST' });
+        // Update local state
+        const group = groups.find(g => g.id === selectedGroup.id);
+        if (group && group.unreadCount && group.unreadCount > 0) {
+          setGroups(groups.map(g => g.id === selectedGroup.id ? { ...g, unreadCount: 0 } : g));
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupMessages.length]);
+
+  // Auto-mark as read when viewing a chat and new message arrives
+  useEffect(() => {
+    if (selectedChat && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.senderId !== currentUser?.id && lastMessage.receiverId === currentUser?.id) {
+        // Mark as read when viewing chat
+        fetch(`/api/chats/${selectedChat.id}/read-all`, { method: 'POST' });
+        // Update local state
+        const chat = chats.find(c => c.id === selectedChat.id);
+        if (chat && chat.unreadCount && chat.unreadCount > 0) {
+          setChats(chats.map(c => c.id === selectedChat.id ? { ...c, unreadCount: 0 } : c));
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
 
   // Check auth on mount
   useEffect(() => {
